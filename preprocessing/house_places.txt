@@ -1,0 +1,27 @@
+the bedroom
+the bathroom
+the hall
+the utility room
+the shed
+the loft
+the attic
+the cellar
+the basement
+the landing
+the hall
+the porch
+the pantry
+the larder 
+the terrace
+the patio
+the study
+the balcony
+the detached house
+the semi detached house
+the apartment
+the terraced house
+the cottage
+the bungalow
+the bedsit
+the villa
+the time share

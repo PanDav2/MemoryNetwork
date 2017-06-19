@@ -1,5 +1,0 @@
-Ceci est un fichier de texte d'essaie.
-
-Il introduit l'ensemble des données nécessaires à l'execution des démarches nécessaires.
-Afin de faire en sorte que ce dernier fonctionne comme convenu afin de m'en voulir.
-
