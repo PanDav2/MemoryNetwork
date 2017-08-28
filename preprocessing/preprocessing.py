@@ -61,6 +61,13 @@ class Scenario(object):
             self.dataset[i] = t.generate_training_example()
         return self.dataset
 
+    @classmethod
+    def generate_corpus(cls):
+        s = cls(Locations)
+        ss = s.create_corpus()
+        write_corpus(ss,infile=True)
+
+
 class TrainingItems(object):
     __metaclass__ = ABCMeta
 
@@ -133,6 +140,9 @@ class Locations(TrainingItems):
             return self._formulation[indice][np.random.choice(len(self._formulation[indice]))]
 
 def write_corpus(dataset,infile=False):
+    """
+    Write the generated corpus inside
+    """
         assert isinstance(dataset,dict), "the given dataset is not of the right type. {} found, dict required ".format(type(dataset))
         if infile:
             with open("output.txt","w") as out:
@@ -148,17 +158,13 @@ def write_corpus(dataset,infile=False):
             return f
 
 
-def main():
-    s = Scenario(Locations)
-    ss = s.create_corpus()
-    write_corpus(ss,infile=True)
+def main(**args):
+    Scenario.generate_corpus()
 
 if __name__ == '__main__':
     global args
     parser = argparse.ArgumentParser(description =__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--TrainingItems', default=Locations,
-                        help='Which information we want our algorithm to generate information in (default: Locations)')
     parser.add_argument('--filename',default='dataset.hd5', help='The filename in which we want to save the created dataset (default : dataset.hd5)')
     args = parser.parse_args()
-    a = vars(args)
-    main()
+    a = dict(vars(args))
+    main(**a)

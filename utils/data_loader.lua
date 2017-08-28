@@ -3,11 +3,12 @@ OUT_VOCAB_FILE = "/Users/david/Documents/MemoryNetwork/output_lua/vocab.t7"
 OUT_TENSOR_FILE = "/Users/david/Documents/MemoryNetwork/output_lua/sample.t7"
 OUT_LABEL_FILE = "/Users/david/Documents/MemoryNetwork/output_lua/label.t7"
 
-DataLoader = {}
+local DataLoader = {}
+DataLoader.__index = DataLoader
 
 function DataLoader.split(input_file, sep,debug)
     --[[
-        This method seperate the training samples from the label they have been given
+        This method seperate the training samples from the label (response)
     ]]
     sep = sep or '|'
     debug = debug or 0
@@ -27,6 +28,9 @@ function DataLoader.split(input_file, sep,debug)
 end
 
 function DataLoader.create_vocabulary(sample_tab,label_tab,out_vocab_file)
+    --[[
+        This method create the vocabulary resources based on a input text file
+    ]]
     out_vocab_file = out_vocab_file or OUT_VOCAB_FILE
     local rawdata
     local max_sent_len = 0
@@ -55,17 +59,25 @@ function DataLoader.create_vocabulary(sample_tab,label_tab,out_vocab_file)
     local ordered = {}
     for word in pairs(unordered) do ordered[#ordered + 1] = word end
     table.sort(ordered)
-    -- invert `ordered` to create the char->int mapping
+    -- invert `ordered` to create the word->int mapping
     local vocab_mapping = {}
+    local index_mapping = {}
     for i, word in ipairs(ordered) do
+        index_mapping[i+1] = word
         vocab_mapping[word] = i+1
     end
+    local  out_index_file = out_vocab_file..'_index'
     print('saving ' .. out_vocab_file)
     torch.save(out_vocab_file, vocab_mapping)
-    return {sent_count,vocab_mapping,max_sent_len}
+    print('saving its index in '.. out_index_file )
+    torch.save(out_index_file, index_mapping)
+    return {sent_count,vocab_mapping,max_sent_len,index_mapping}
 end
 
 function DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,input_tab,tensor_file)
+    --[[
+        Create a tensor of word indice based on the input text
+    ]]
     local tensor_file = tensor_file or OUT_TENSOR_FILE
     local data = torch.ByteTensor(sent_count,max_sent_len):fill(1)
     local currline = 1
@@ -81,29 +93,38 @@ function DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,input_ta
     -- save output preprocessed files
     print('saving ' .. tensor_file)
     torch.save(tensor_file, data)
+    return data
 end
 
 function DataLoader.text_to_tensor(input_file, out_vocab_file, out_label_tensor_file,out_sample_tensor_file)
+    --[[
+        Run the text to tensor process
+    ]]
     local input_file = input_file or INPUT_FILE
     local out_vocab_file = out_vocab_file or OUT_VOCAB_FILE
     local out_label_tensor_file = out_label_tensor_file or OUT_LABEL_FILE
     local out_sample_tensor_file = out_sample_tensor_file or OUT_TENSOR_FILE
 
-    local timer = torch.Timer()
-    local a,b = DataLoader.split(input_file)
-    local aa = DataLoader.create_vocabulary(a,b)
+    local input,label = DataLoader.split(input_file)
+    local output_create_vocab = DataLoader.create_vocabulary(input,label)
     
-    local sent_count = aa[1]
-    local vocab_mapping = aa[2]
-    local max_sent_len = aa[3]
+    local sent_count = output_create_vocab[1]
+    local vocab_mapping = output_create_vocab[2]
+    local max_sent_len = output_create_vocab[3]
+    local index_mapping = output_create_vocab[4]
+
     print('putting sample tensor into '.. out_sample_tensor_file..'...')
-    local sample = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,a,out_sample_tensor_file)
-    print('putting sample tensor into '.. out_label_tensor_file..'...')
-    local label = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,b,out_label_tensor_file)
+    sample = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,input,out_sample_tensor_file)
+    print('putting label tensor into '.. out_label_tensor_file..'...')
+    label = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,label,out_label_tensor_file)
     return sample,label
 end
 
+
 function DataLoader.count_table_elements(t)
+    --[[
+        Simply count the amount of elements in a table
+    ]]
     local count = 0
     for _ in pairs(t) do 
         count = count+1

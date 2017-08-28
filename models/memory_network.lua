@@ -1,16 +1,30 @@
-local OneHot, parent = torch.class('OneHot','nn.Module')
+require 'nn';
+require 'nngraph'
+require 'OneHot'
 
-function OneHot:__init(outputSize)
+local IModule, parent = torch.class('IModule', 'nn.Module')
+
+function 
+
+function IModule:__init(num_mem,input_size)
 	parent.__init(self)
-	self.outputSize = outputSize
-	self._eye = torch.eye(outputSize)
+    self.input_size = input_size or 54
+    self.mem_size = input_size/num_mem
+    assert(isint(mem_size), "input_size/num_mem is not integer. input_size "..input_size .. " num_mem "..num_mem)
+    local voc_size = dl.count_table_elements(voc)
+    o = OneHot(voc_size+1) 
+    self.mem_nn = nn.Sequential()
+    -- I Module
+    self.mem_nn:add(o)
+    -- G Module
+    self.mem_nn:add(nn.Reshape(num_mem,input_size/num_mem,voc_size+1))
+    self.mem_nn:add(nn.SplitTable(1))
+    self.mem_nn:add(nn.ParallelTable():add(a[1]):add(a[2]))
+    self.mem_nn:add(nn.JoinTable())
+    return mem_nn
 end
 
-function OneHot:updateOutput(input)
-	self.output:resize(input:size(1),self.outputSize):zero()
-	if self._eye == nil then self._eye = torch.eye(self.outputSize):zero() end
-	self._eye = self._eye:float()
-	local longInput = input:long()
-	self.output:copy(self._eye:index(1,longInput))
-	return self.output
+
+function IModule:forward(input)
+	self.mem_nn:forward(input)
 end
