@@ -1,30 +1,33 @@
-require 'nn';
+require 'nn'
 require 'nngraph'
-require 'OneHot'
-
-local IModule, parent = torch.class('IModule', 'nn.Module')
-
-function 
-
-function IModule:__init(num_mem,input_size)
-	parent.__init(self)
-    self.input_size = input_size or 54
-    self.mem_size = input_size/num_mem
-    assert(isint(mem_size), "input_size/num_mem is not integer. input_size "..input_size .. " num_mem "..num_mem)
-    local voc_size = dl.count_table_elements(voc)
-    o = OneHot(voc_size+1) 
-    self.mem_nn = nn.Sequential()
-    -- I Module
-    self.mem_nn:add(o)
-    -- G Module
-    self.mem_nn:add(nn.Reshape(num_mem,input_size/num_mem,voc_size+1))
-    self.mem_nn:add(nn.SplitTable(1))
-    self.mem_nn:add(nn.ParallelTable():add(a[1]):add(a[2]))
-    self.mem_nn:add(nn.JoinTable())
-    return mem_nn
-end
+require 'inference_module'
+require 'memory_module'
 
 
-function IModule:forward(input)
-	self.mem_nn:forward(input)
-end
+function create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
+    ------------------ Initialization -------------------
+    SEQ_LENGTH = SEQ_LENGTH or 5
+    MEM_SIZE = MEM_SIZE or 3
+    NUM_MEM = NUM_MEM or 2
+    VOCAB_SIZE = VOCAB_SIZE or 30
+    ------------------ I Module -------------------
+    local mem_net = nn.Sequential()
+    local branch_net = nn.ConcatTable()
+    local mlp = nn.Sequential()
+    local net = nn.Parallel(1,1)
+    for i=1,SEQ_LENGTH do
+        net:add(OneHot(VOCAB_SIZE))
+    end
+    mlp:add(net)    
+    ------------------ G Module -------------------    
+    -- m = MemoryModule.new(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
+    local g_mod = MemoryModule.new(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
+    mlp:add(g_mod)
+    ------------------ O Module -------------------    
+    local o_mod = InferenceModule.new(VOCAB_SIZE,3*VOCAB_SIZE)
+    branch_net:add(mlp)
+    branch_net:add(nn.Identity())
+    mem_net:add(branch_net)
+    mem_net:add(o_mod)
+    return mem_net
+end 
