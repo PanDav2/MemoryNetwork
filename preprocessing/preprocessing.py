@@ -65,7 +65,7 @@ class Scenario(object):
     def generate_corpus(cls):
         s = cls(Locations)
         ss = s.create_corpus()
-        write_corpus(ss,infile=True)
+        return write_corpus(ss,infile=True)
 
 
 class TrainingItems(object):
@@ -92,11 +92,12 @@ class TrainingItems(object):
 
     def generate_training_example(self):
         d = {}
-        q = self._generate_questions()
         c = self._generate_context()
+        q = self._generate_questions()
         c.append(q["question"])
         d["X"] = '. '.join(c)
         d["Y"] = q["answer"]
+        d["fact_ids"] = q["fact_ids"]
         return d
 
 
@@ -125,10 +126,17 @@ class Locations(TrainingItems):
         self._questions[1]["answer"] = self.p2
 
         l = np.random.choice(len(self._questions))
+        # Case question 1 - reason x left
+        if l == 0 :
+            fact_ids = "42,43,44,45,46,47,48,49,50"
+        else :
+        # Case question 2 - location of object
+            fact_ids = "22,23,24,25,26,27,28"
         return {"question": self._questions[l]["question"],
-                "answer": self._generate_answer(l) + self._questions[l]["answer"]}
+                "answer": self._generate_answer(l) + self._questions[l]["answer"],
+                "fact_ids":fact_ids}
 
-    def _generate_answer(self, indice,level=0):
+    def _generate_answer(self, indice,level=1):
         self._formulation = defaultdict(list)
         if level == 0 :
             return ""
@@ -143,23 +151,30 @@ def write_corpus(dataset,infile=False):
     """
     Write the generated corpus inside
     """
-        assert isinstance(dataset,dict), "the given dataset is not of the right type. {} found, dict required ".format(type(dataset))
-        if infile:
-            with open("output.txt","w") as out:
-                for _,item in dataset.iteritems():
-                    sol = " | ".join([item["X"],item["Y"]])
-                    out.write(sol+'\n')
-        else :
-            f = []
+    assert isinstance(dataset,dict), "the given dataset is not of the right type. {} found, dict required ".format(type(dataset))
+    if infile:
+        with open("output.txt","w") as out:
             for _,item in dataset.iteritems():
-                sol = " | ".join([item["X"],item["Y"]])
-                print sol
-                f.append(sol)
-            return f
+                sol = " | ".join([item["X"],item["Y"], item["fact_ids"]])
+                out.write(sol+'\n')
+    else :
+        out = []
+        for _,item in dataset.iteritems():
+            sol = " | ".join([item["X"],item["Y"],item['fact_ids']])
+            out.append(sol)
+        return out
 
 
 def main(**args):
-    Scenario.generate_corpus()
+    a = Scenario.generate_corpus()
+    # test = a[3]
+    # print(test)
+    # ind = test.split("|")[-1]
+    # print(ind)
+    # ind_int = map(int,map(lambda x :x.decode('utf-8'),ind.split(",")))
+    # print(map(lambda x : test.split(" ")[x-1], ind_int))
+
+
 
 if __name__ == '__main__':
     global args

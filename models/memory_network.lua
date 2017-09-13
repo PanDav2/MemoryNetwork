@@ -29,5 +29,6 @@ function create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
     branch_net:add(nn.Identity())
     mem_net:add(branch_net)
     mem_net:add(o_mod)
+    ------------------ R Module -------------------
     return mem_net
-end 
+end
