@@ -2,7 +2,7 @@ MemoryModule, parent = torch.class('MemoryModule','nn.Module')
 
 function MemoryModule:__init(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
     parent.__init(self)
-    self._num_mem = NUM_MEM or 
+    self._num_mem = NUM_MEM
     self._mem_size = MEM_SIZE
     self._memory = {}
     for i=1,NUM_MEM do table.insert(self._memory,torch.Tensor(MEM_SIZE,VOCAB_SIZE):fill(0)) end

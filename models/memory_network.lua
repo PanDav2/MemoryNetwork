@@ -1,10 +1,6 @@
-require 'nn'
-require 'nngraph'
-require 'inference_module'
-require 'memory_module'
+local MemoryNetwork = {}
 
-
-function create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
+function MemoryNetwork.create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
     ------------------ Initialization -------------------
     SEQ_LENGTH = SEQ_LENGTH or 5
     MEM_SIZE = MEM_SIZE or 3
@@ -14,13 +10,12 @@ function create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
     local mem_net = nn.Sequential()
     local branch_net = nn.ConcatTable()
     local mlp = nn.Sequential()
-    local net = nn.Parallel(1,1)
+    local parallel_net = nn.Parallel(1,1)
     for i=1,SEQ_LENGTH do
-        net:add(OneHot(VOCAB_SIZE))
+        parallel_net:add(OneHot(VOCAB_SIZE))
     end
-    mlp:add(net)    
+    mlp:add(parallel_net)    
     ------------------ G Module -------------------    
-    -- m = MemoryModule.new(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
     local g_mod = MemoryModule.new(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
     mlp:add(g_mod)
     ------------------ O Module -------------------    
@@ -32,3 +27,5 @@ function create_network(SEQ_LENGTH,VOCAB_SIZE,MEM_SIZE,NUM_MEM)
     ------------------ R Module -------------------
     return mem_net
 end
+
+return MemoryNetwork
