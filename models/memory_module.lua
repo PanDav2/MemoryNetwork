@@ -1,38 +1,18 @@
-MemoryModule, parent = torch.class('MemoryModule','nn.Module')
+MemoryModule = {}
 
-function MemoryModule:__init(NUM_MEM,MEM_SIZE,VOCAB_SIZE)
-    parent.__init(self)
-    self._num_mem = NUM_MEM
-    self._mem_size = MEM_SIZE
-    self._memory = {}
-    for i=1,NUM_MEM do table.insert(self._memory,torch.Tensor(MEM_SIZE,VOCAB_SIZE):fill(0)) end
-end
-
-function MemoryModule:updateOutput(input)
-    -- Replace the index memory with the input it as received
-    assert(input:size(2) == self._memory[1]:size(2), "input size and memory size are differents")
-    local input = input:clone()
-    local loaded_mem = 0
-    for i=1,#self._memory do
-       for j=1,self._mem_size do
-            if j + loaded_mem > input:size(1) then
-                break
-            end
-            self._memory[i][{j}] = input[{j + loaded_mem,{}}]
-        end
-        loaded_mem = loaded_mem + self._mem_size
-    end
-    return self._memory
-end
-
-function MemoryModule:getIndex(index)
-    return self._memory[index]
-end
-
-function MemoryModule:getMemorySize()
-    return #self._memory
-end
-
-function MemoryModule:getMemory()
-    return nn.JoinTable(1):forward(self._memory)
+function MemoryModule.create_network(num_mem,longuest_sentence_size,debug)--longest_sentence,voc_size,num_mem)
+    local inputs = {}
+    local outputs = {}
+    table.insert(inputs, nn.Identity()())
+    -- 
+    local reshaped_input =  nn.Reshape(1,-1)(inputs[1])
+    local mem_proj = nn.SplitTable(1)(reshaped_input):annotate{name="mem_proj"}
+    -- Creating memory adressage :
+    local mem_size =  math.floor(longuest_sentence_size/num_mem)
+    if debug then print("num_mem = "..num_mem) print("mem_size = "..mem_size) end
+    for i=1,num_mem do
+        local mem_mapping = nn.NarrowTable(1+(i-1)*mem_size,mem_size)(mem_proj)
+        table.insert(outputs, nn.JoinTable(1)(mem_mapping)) -- Joining to get a table of tensors
+    end 
+    return nn.gModule(inputs, outputs)
 end

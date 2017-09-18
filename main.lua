@@ -49,9 +49,3 @@ else
     index = torch.load("/Users/david/Documents/MemoryNetwork/output_lua/vocab.t7_index") 
 end
 
-if opt.model == 'lstm' then
-	print('ERROR. lstm not implemented yet')
-	os.exit()
-else
-	print('all good')
-end
