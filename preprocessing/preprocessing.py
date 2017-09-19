@@ -62,7 +62,7 @@ class Scenario(object):
         return self.dataset
 
     @classmethod
-    def generate_corpus(cls):
+    def generate_corpus(cls,level):
         s = cls(Locations)
         ss = s.create_corpus()
         return write_corpus(ss,infile=True)
@@ -121,7 +121,7 @@ class Locations(TrainingItems):
     def _generate_questions(self,level=0):
         self._questions = defaultdict(dict)
         self._questions[0]["question"] = "Why did " + self.c2 + " left ?"
-        self._questions[0]["answer"] = " he doesn't like " + self.c1
+        self._questions[0]["answer"] = self.c1
         self._questions[1]["question"] = "Where is the " + self.o0 + " ?"
         self._questions[1]["answer"] = self.p2
 
@@ -133,16 +133,16 @@ class Locations(TrainingItems):
         # Case question 2 - location of object
             fact_ids = "22,23,24,25,26,27,28"
         return {"question": self._questions[l]["question"],
-                "answer": self._generate_answer(l) + self._questions[l]["answer"],
+                "answer": self._generate_answer(l,level) + self._questions[l]["answer"],
                 "fact_ids":fact_ids}
 
-    def _generate_answer(self, indice,level=1):
+    def _generate_answer(self, indice,level=0):
         self._formulation = defaultdict(list)
         if level == 0 :
             return ""
         else :
-            self._formulation[0].append("I guess because ")
-            self._formulation[0].append("I think it's because ")
+            self._formulation[0].append("I guess because he doesn't like ")
+            self._formulation[0].append("I think it's because of ")
             self._formulation[1].append("I think it's in ")
             self._formulation[1].append("Probably in ")
             return self._formulation[indice][np.random.choice(len(self._formulation[indice]))]
@@ -166,20 +166,16 @@ def write_corpus(dataset,infile=False):
 
 
 def main(**args):
-    a = Scenario.generate_corpus()
-    # test = a[3]
-    # print(test)
-    # ind = test.split("|")[-1]
-    # print(ind)
-    # ind_int = map(int,map(lambda x :x.decode('utf-8'),ind.split(",")))
-    # print(map(lambda x : test.split(" ")[x-1], ind_int))
+    level = args['level']
+    a = Scenario.generate_corpus(level)
 
 
 
 if __name__ == '__main__':
     global args
     parser = argparse.ArgumentParser(description =__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--filename',default='dataset.hd5', help='The filename in which we want to save the created dataset (default : dataset.hd5)')
+    parser.add_argument('--filename',default='output.txt', help='The filename in which we want to save the created dataset (default : output.txt)')
+    parser.add_argument('--level',default=0, help='The level of detail of the generated answers (default : 0)')
     args = parser.parse_args()
     a = dict(vars(args))
     main(**a)
