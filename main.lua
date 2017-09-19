@@ -25,6 +25,7 @@ cmd:option('-voc_size',58,'dimension of the vocabulary')
 cmd:option('-learning_rate',1e-5, "the learning rate")
 cmd:option('-iterations',1000, "Number of iterations through the network")
 cmd:option('-num_epoch',100,"number of epochs during training")
+cmd:option('-val_percentage',0.1,"amount of data using to create the training set")
     
 opt = cmd:parse(arg)
 
@@ -56,7 +57,7 @@ rep = RepresentationModule.create_network(opt.voc_size)
 mem_mod = MemoryModule.create_network(opt.num_mem,opt.voc_size)
 -- Infering on memory 
 o_mod = InferenceGraph.create_network(opt.voc_size,opt.feature_dim)
--- Inferinf on Response
+-- Infering on Response
 r_mod = InferenceGraph.create_network(opt.voc_size,opt.feature_dim)
 
 criterion = nn.MarginRankingCriterion(0.1)
@@ -101,7 +102,8 @@ end
 -------------- 
 
 local loss = {}
-local total_loss = 0
+local total_train_loss = 0
+local total_test_loss = 0
 
 for ii = 1, opt.num_epoch do 
     for i=1,opt.iterations do

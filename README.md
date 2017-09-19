@@ -20,6 +20,8 @@ Organization : UPMC - Master Data Science
 
 `python preprocessing/preprocessing.py`
 
+You can adjust the level of detail in the generated answer using the `level` argument.  (default is `-level  0`) `-level 1` compute sentence instead of words.
+
 ### transform csv data into torch tensor (only if recomputed csv)
 
 `th main.lua -generate_dataset 1`
