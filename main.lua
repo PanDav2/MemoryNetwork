@@ -18,18 +18,17 @@ cmd:text()
 -- Data Loading parameters
 cmd:option('-generate_dataset',0,'generate the torch data representation')
 -- Model parameters
-cmd:option('-num_mem',2,'number of memory units')
+cmd:option('-num_mem',10,'number of memory units')
 cmd:option('-feature_dim',174,'dimension of the vocabulary embedding')
-cmd:option('-voc_size',30,'dimension of the vocabulary')
+cmd:option('-voc_size',58,'dimension of the vocabulary')
 -- Model Parameter 
 cmd:option('-learning_rate',1e-5, "the learning rate")
 cmd:option('-iterations',1000, "Number of iterations through the network")
+cmd:option('-num_epoch',100,"number of epochs during training")
     
 opt = cmd:parse(arg)
 
-
 data_loader = require 'utils.data_loader';
-
 
 local N_ITERATIONS = 1000
 local LEARNING_RATE = 1e-5
@@ -39,11 +38,11 @@ if opt.generate_dataset == 0 then
     y = torch.load("output_lua/label.t7")
     voc = torch.load("output_lua/vocab.t7")
     index = torch.load("output_lua/vocab.t7_index")
+    f = torch.load("output_lua/fact_tensor.t7")
 else 
     input_file = "preprocessing/output.txt"
     out_vocab_file = "output_lua/vocab.t7"
     out_tensor_file = "output_lua/data.t7"
-    voc = torch.load("output_lua/vocab.t7")
     index = torch.load("output_lua/vocab.t7_index")
     x, y, f = data_loader.text_to_tensor(input_file,out_vocab_file,out_tensor_file)
 end
@@ -51,14 +50,14 @@ end
 --------------  Network Creation
 
 -- Incoding input
-rep = RepresentationModule.create_network(opt.vocab_size)
+rep = RepresentationModule.create_network(opt.voc_size)
 -- print(rep:forward(x[1]):size())
 -- Setting memory
-mem_mod = MemoryModule.create_network(opt.num_mem,opt.vocab_size)
+mem_mod = MemoryModule.create_network(opt.num_mem,opt.voc_size)
 -- Infering on memory 
-o_mod = InferenceGraph.create_network(opt.vocab_size,opt.feature_dim)
+o_mod = InferenceGraph.create_network(opt.voc_size,opt.feature_dim)
 -- Inferinf on Response
-r_mod = InferenceGraph.create_network(opt.vocab_size,opt.feature_dim)
+r_mod = InferenceGraph.create_network(opt.voc_size,opt.feature_dim)
 
 criterion = nn.MarginRankingCriterion(0.1)
 
@@ -101,31 +100,38 @@ end
 
 -------------- 
 
+local loss = {}
+local total_loss = 0
 
-for i=1,N_EPOCH do
-    local indice = torch.random(1,x:size(1))-- picking up a sentence in the training set
-    local x_i, y_i = x[indice], y[indice]
-    local m_i = get_facts_memory(indice,f,NUM_MEM)
-    
-    -- Going Through the Network 
-    local xrepr = rep:forward(x_i)
-    local yrepr = rep:forward(y_i)
-    local a = mem_mod:forward(xrepr) -- a is the table of memories
+for ii = 1, opt.num_epoch do 
+    for i=1,opt.iterations do
+        local indice = torch.random(1,x:size(1))-- picking up a sentence in the training set
+        local x_i, y_i = x[indice], y[indice]
+        local m_i = get_facts_memory(indice,f,opt.num_mem)
+        
+        -- Going Through the Network 
+        local xrepr = rep:forward(x_i)
+        local yrepr = rep:forward(y_i)
+        local a = mem_mod:forward(xrepr) -- a is the table of memories
+        --
+        local j = torch.random(1,opt.num_mem) -- picking up a memory
+        local o_label = o_mod:forward{xrepr, a[m_i[1]]}
+        if m_i[1] == j then
+        else 
+            local o_score = o_mod:forward{xrepr,a[j]}
+            local resized_pred = nn.JoinTable(1):forward{o_label, o_score}
+            local o_err = criterion:forward(resized_pred,1)
+            local gradCriterion = criterion:backward(resized_pred, 1)
+            local crit_false = nn.Reshape(1,1,false):forward(gradCriterion[2])
+            local crit_true = nn.Reshape(1,1,false):forward(gradCriterion[1])
+            o_mod:zeroGradParameters()
+            o_mod:backward({xrepr,a[j]},crit_false)
+            o_mod:backward({xrepr,m_i[1]},crit_true)
 
-    --
-    local j = torch.random(1,NUM_MEM) -- picking up a memory
-    local o_label = o_mod:forward{xrepr, a[m_i[1]]}
-    if m_i[1] == j then
-    else 
-        local o_score = o_mod:forward{xrepr,a[j]}
-        print(o_label)
-        print(o_score)
-        local resized_pred = nn.JoinTable(1):forward{o_label, o_score}
-        local err = criterion:forward(resized_pred,1)
-        local gradCriterion = criterion:backward(resized_pred, 1)
-        local aaa = nn.Reshape(2,1):forward(nn.JoinTable(1):forward(gradCriterion))
-        print(aaa:size())
-        o_mod:zeroGradParameters()
-        o_mod:backward({xrepr,a[j]},aaa:transpose(1,2))
+            loss[#loss] = o_err
+            total_loss = total_loss + o_err
+        end
     end
-end
+    print("epoch "..ii.." : "..total_loss/opt.iterations)
+    total_loss = 0
+end 

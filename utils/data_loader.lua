@@ -116,12 +116,14 @@ function DataLoader.text_to_tensor(input_file, out_vocab_file, out_label_tensor_
     local index_mapping = output_create_vocab[4]
 
     local a = DataLoader.split_fact_table(supp_facts)
-    local facts = DataLoader.convert_tensor_to_table(a) -- converting fact table to tensor
+    local facts = DataLoader.convert_table_to_tensor(a)
+    torch.save("output_lua/fact_tensor.t7",facts)
 
     print('putting sample tensor into '.. out_sample_tensor_file..'...')
     local sample = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,input,out_sample_tensor_file)
     print('putting label tensor into '.. out_label_tensor_file..'...')
     local label = DataLoader.create_tensor(sent_count,vocab_mapping,max_sent_len,label,out_label_tensor_file)
+
     return sample,label, facts
 end
 
@@ -137,7 +139,7 @@ function DataLoader.count_table_elements(t)
     return count
 end
 
-function DataLoader.convert_tensor_to_table(table_to_convert)
+function DataLoader.convert_table_to_tensor(table_to_convert)
     local size = 0
     for i=1, #table_to_convert do
         if #table_to_convert[i] > size then

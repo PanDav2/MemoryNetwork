@@ -16,3 +16,5 @@ function MemoryModule.create_network(num_mem,longuest_sentence_size,debug)--long
     end 
     return nn.gModule(inputs, outputs)
 end
+
+return MemoryModule
