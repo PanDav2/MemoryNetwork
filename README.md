@@ -7,7 +7,7 @@ People : David Panou
 Organization : UPMC - Master Data Science
 
 - :white_check_mark: Embeddings (inputs & memory )
-- :white_medium_square: Relational Inference
+- :white_check_mark: Relational Inference
 - :white_medium_square: Results and Model Analysis
 
 ## Memory Network
