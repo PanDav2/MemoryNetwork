@@ -9,6 +9,8 @@ Organization : UPMC - Master Data Science
 - :white_check_mark: Embeddings (inputs & memory )
 - :white_check_mark: Relational Inference
 - :white_medium_square: Results and Model Analysis
+- :white_medium_square: Handling other entries than OneHot (Look-up Table for pretrained embeddings)
+- :white_medium_square: Adding Optim package for better sgd (momentum and others)
 
 ## Memory Network
 
@@ -32,7 +34,7 @@ Organization : UPMC - Master Data Science
 
 The written parameters above are the default one.
 
-Be careful that : 
+Be careful that :
     - voc_size is >= to the number of word in the dataset
 
 ---
