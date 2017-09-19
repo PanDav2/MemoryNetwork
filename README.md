@@ -14,7 +14,30 @@ Organization : UPMC - Master Data Science
 
 ---
 
-The model can be found under `models/memory_network.lua`, along with baseline models lstm and gru. (`models/lstm.lua` and `models/gru.lua`)
+### Create the dataset
+
+`python preprocessing/preprocessing.py`
+
+### transform csv data into torch tensor (only if recomputed csv)
+
+`th main.lua -generate_dataset 1`
+
+### Perform Memory Network Training
+
+`th main.lua -train_mem_net 1`  To run with default parameters
+
+### Go into further parametring 
+
+`th main.lua -train_mem_net 1 -num_mem 10 -feature_dim 174 -voc_size 58`
+
+The written parameters above are the default one.
+
+Be careful that : 
+    - voc_size is >= to the number of word in the dataset
+
+---
+
+The different modules can be found under `models/*_module.lua`
 
 The current `main.lua` replicates the Basic Question-Answering task described in the paper, but the implementation should be able to handle other tasks.
 
@@ -23,5 +46,3 @@ Results are stored in `results`
 ## Results
 
 Upcoming
-
-Advanced results analysis can be found under `logs`
