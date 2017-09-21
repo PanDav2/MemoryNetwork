@@ -2,11 +2,15 @@ require 'nn';
 require 'nngraph';
 require 'utils.OneHot';
 require 'math';
+require 'optim';
+require 'gnuplot';
+gnuplot.setterm("dumb")
+
 
 MixingGraph = require 'models.mixing_module';
 MemoryModule = require 'models.memory_module';
 RepresentationModule = require 'models.representation_module';
-InfereenceGraph = require 'models.inference_module';
+InferenceGraph = require 'models.inference_module';
 data_loader = require 'utils.data_loader';
 
 cmd = torch.CmdLine()
@@ -23,12 +27,13 @@ cmd:option('-num_mem',10,'number of memory units')
 cmd:option('-feature_dim',174,'dimension of the vocabulary embedding')
 cmd:option('-voc_size',58,'dimension of the vocabulary')
 cmd:option('-weight_initialization',"random","define the weight initialization")
--- Model Parameter 
+-- Training parameters
 cmd:option('-print_every',10, "print loss every x reps")
 cmd:option('-learning_rate',1e-5, "the learning rate")
 cmd:option('-iterations',1000, "Number of iterations through the network")
 cmd:option('-num_epoch',100,"number of epochs during training")
 cmd:option('-val_percentage',0.1,"amount of data using to create the training set")
+cmd:option('-plot',0,"Plot the loss curves after training (1 to plot)")
     
 opt = cmd:parse(arg)
 
@@ -126,6 +131,9 @@ local loss = {}
 local total_loss = 0
 local total_loss = 0
 
+logger = optim.Logger('accuracy.log')
+logger:setNames{'o_err', 'r_err'}
+
 
 for ii = 1, opt.num_epoch do 
     for i=1,opt.iterations do
@@ -194,11 +202,16 @@ for ii = 1, opt.num_epoch do
         loss[#loss] = o_err 
         total_loss = total_loss + o_err + r_err
         if i % opt.print_every == 0 then
-            print("o_err : ".. o_err)
-            print("r_err : ".. r_err)
+            -- print("o_err : ".. o_err)
+            -- print("r_err : ".. r_err)
+            logger:add{o_err, r_err}
         end
         
     end
     print("epoch "..ii.." average_loss : "..total_loss/opt.iterations)
     total_loss = 0
 end 
+if opt.plot ~= 0 then
+    logger:style{'+-', '+-'}
+    logger:plot()
+end
