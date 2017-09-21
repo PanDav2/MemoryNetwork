@@ -52,7 +52,7 @@ class Scenario(object):
         t = training_sample(self.objects,self.names,self.locations)
         self.training_samples.append(t)
 
-    def create_corpus(self,number_of_sentences = 70):
+    def create_corpus(self,number_of_sentences = 10000):
         self._generate_variables()
         self.dataset = defaultdict(dict)
         for i in range(number_of_sentences) :
@@ -62,7 +62,7 @@ class Scenario(object):
         return self.dataset
 
     @classmethod
-    def generate_corpus(cls,level):
+    def generate_corpus(cls,level,number_of_sample):
         s = cls(Locations)
         ss = s.create_corpus()
         return write_corpus(ss,infile=True)
@@ -167,7 +167,8 @@ def write_corpus(dataset,infile=False):
 
 def main(**args):
     level = args['level']
-    a = Scenario.generate_corpus(level)
+    number_of_samples = args["n"]
+    a = Scenario.generate_corpus(level,number_of_samples)
 
 
 
@@ -176,6 +177,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description =__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--filename',default='output.txt', help='The filename in which we want to save the created dataset (default : output.txt)')
     parser.add_argument('--level',default=0, help='The level of detail of the generated answers (default : 0)')
+    parser.add_argument('--n',default=10000, help='The number of sentence generated for the training dataset')
     args = parser.parse_args()
     a = dict(vars(args))
     main(**a)
+    print("dataset generated")

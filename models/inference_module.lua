@@ -12,7 +12,7 @@ function InferenceGraph.create_network(voc_size, feature_dim)
     local lin2 = nn.Linear(voc_size,feature_dim)(repr_y):annotate{name="inference_proj_2", style="filled", fillcolor = "yellow"}
     local prod = nn.MM(false,true){lin1,lin2}:annotate{name= "inference_product", style="filled", fillcolor = "yellow"}
     -- Outputs
-    table.insert(outputs,prod)    
+    table.insert(outputs,prod)
     return nn.gModule(inputs, outputs)
 end
 
